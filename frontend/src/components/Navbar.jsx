@@ -4,7 +4,7 @@ import { Menu, Sun, Moon, ChevronDown, User, LogOut, Bell, X } from 'lucide-reac
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
 
-const DEMO_NOTIFICATIONS = []
+import api from '../services/api'
 
 const PAGE_TITLES = {
   '/dashboard':   'Dashboard',
@@ -32,7 +32,8 @@ export default function Navbar({ onMenuClick }) {
 
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [notifOpen, setNotifOpen] = useState(false)
-  const [hasUnread, setHasUnread] = useState(DEMO_NOTIFICATIONS.some((n) => n.unread))
+  const [notifications, setNotifications] = useState([])
+  const [hasUnread, setHasUnread] = useState(false)
   const dropdownRef = useRef(null)
   const notifRef = useRef(null)
 
@@ -41,6 +42,15 @@ export default function Navbar({ onMenuClick }) {
   const initials = user?.name
     ? user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
     : 'U'
+
+  useEffect(() => {
+    if (user) {
+      api.get('/notifications').then(res => {
+        setNotifications(res.data)
+        setHasUnread(res.data.some(n => n.unread))
+      }).catch(console.error)
+    }
+  }, [user])
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -115,9 +125,9 @@ export default function Navbar({ onMenuClick }) {
                 </button>
               </div>
               <div className="max-h-72 overflow-y-auto">
-                {DEMO_NOTIFICATIONS.length > 0 ? (
+                {notifications.length > 0 ? (
                   <ul className="divide-y divide-slate-100 dark:divide-slate-700">
-                    {DEMO_NOTIFICATIONS.map((n) => (
+                    {notifications.map((n) => (
                       <li
                         key={n.id}
                         className={`px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/40 transition-colors ${

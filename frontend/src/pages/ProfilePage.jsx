@@ -82,7 +82,8 @@ export default function ProfilePage() {
       updateUser({ avatar_url: updatedUser.avatar_url })
       toast.success('Profile photo updated! ✅')
     } catch (err) {
-      toast.error(err?.response?.data?.detail || 'Failed to upload photo')
+      const errorMsg = err?.response?.data?.detail || err?.message || 'Failed to upload photo'
+      toast.error(`Error: ${errorMsg}`)
     } finally {
       setUploading(false)
       // Reset file input so same file can be re-selected
