@@ -11,7 +11,7 @@ import app.models.expense  # noqa: F401
 import app.models.budget  # noqa: F401
 
 from app.database.db import Base, engine
-from app.routers import auth, budget, categories, dashboard, expenses, reports
+from app.routers import auth, budget, categories, dashboard, expenses, reports, notifications
 
 # Create all database tables
 Base.metadata.create_all(bind=engine)
@@ -54,6 +54,7 @@ app.include_router(categories.router)
 app.include_router(budget.router)
 app.include_router(dashboard.router)
 app.include_router(reports.router)
+app.include_router(notifications.router)
 
 
 @app.get("/", tags=["Root"])

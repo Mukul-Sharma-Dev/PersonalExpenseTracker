@@ -20,8 +20,8 @@ def _compute_budget_response(budget: Budget, db: Session) -> BudgetResponse:
         db.query(func.coalesce(func.sum(Expense.amount), 0.0))
         .filter(
             Expense.user_id == budget.user_id,
-            func.strftime("%m", Expense.date) == f"{budget.month:02d}",
-            func.strftime("%Y", Expense.date) == str(budget.year),
+            Expense.date >= __import__('datetime').date(budget.year, budget.month, 1),
+            Expense.date <= __import__('datetime').date(budget.year, budget.month, __import__('calendar').monthrange(budget.year, budget.month)[1]),
         )
         .scalar()
     )
