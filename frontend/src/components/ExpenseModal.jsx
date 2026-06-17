@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react'
+import { useEffect, useCallback, useState, useRef } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -30,6 +30,22 @@ const PAYMENT_METHODS = [
 
 export default function ExpenseModal({ expense, categories, onClose, onSubmit, loading }) {
   const isEdit = Boolean(expense)
+
+  const [categorySearch, setCategorySearch] = useState('')
+  const [isCategoryOpen, setIsCategoryOpen] = useState(false)
+  const categoryRef = useRef(null)
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (categoryRef.current && !categoryRef.current.contains(event.target)) {
+        setIsCategoryOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
+
+  const filteredCategories = categories?.filter(c => c.name.toLowerCase().includes(categorySearch.toLowerCase()))
 
   const {
     register,
@@ -141,10 +157,11 @@ export default function ExpenseModal({ expense, categories, onClose, onSubmit, l
                 Date
               </label>
               <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
                 <input
                   {...register('date')}
                   type="date"
+                  onClick={(e) => e.target.showPicker?.()}
                   className={`input-base pl-9 ${errors.date ? 'input-error' : ''}`}
                 />
               </div>
@@ -153,24 +170,63 @@ export default function ExpenseModal({ expense, categories, onClose, onSubmit, l
               )}
             </div>
 
-            <div>
+            <div ref={categoryRef}>
               <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
                 Category
               </label>
-              <div className="relative">
-                <Tag className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                <select
-                  {...register('category_id')}
-                  className={`input-base pl-9 appearance-none ${errors.category_id ? 'input-error' : ''}`}
-                >
-                  <option value="">Select...</option>
-                  {categories?.map((cat) => (
-                    <option key={cat.id} value={cat.id.toString()}>
-                      {cat.icon ? `${cat.icon} ` : ''}{cat.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <Controller
+                name="category_id"
+                control={control}
+                render={({ field }) => {
+                  const selectedCat = categories?.find(c => c.id.toString() === field.value)
+                  return (
+                    <div className="relative">
+                      <Tag className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none z-10" />
+                      <div 
+                        className={`input-base pl-9 flex items-center cursor-pointer ${errors.category_id ? 'input-error' : ''}`}
+                        onClick={() => { setIsCategoryOpen(true); setCategorySearch('') }}
+                      >
+                        {selectedCat ? (
+                          <span>{selectedCat.icon ? `${selectedCat.icon} ` : ''}{selectedCat.name}</span>
+                        ) : (
+                          <span className="text-slate-400">Select...</span>
+                        )}
+                      </div>
+                      
+                      {isCategoryOpen && (
+                        <div className="absolute z-20 w-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg overflow-hidden animate-fade-in">
+                          <div className="p-2 border-b border-slate-100 dark:border-slate-700">
+                            <input
+                              type="text"
+                              autoFocus
+                              placeholder="Search category..."
+                              className="w-full bg-slate-50 dark:bg-slate-900 border-none outline-none text-sm px-3 py-1.5 rounded-lg"
+                              value={categorySearch}
+                              onChange={(e) => setCategorySearch(e.target.value)}
+                            />
+                          </div>
+                          <div className="max-h-48 overflow-y-auto p-1">
+                            {filteredCategories?.length > 0 ? filteredCategories.map(cat => (
+                              <div
+                                key={cat.id}
+                                className={`px-3 py-2 text-sm cursor-pointer rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 ${field.value === cat.id.toString() ? 'bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400' : 'text-slate-700 dark:text-slate-300'}`}
+                                onClick={() => {
+                                  field.onChange(cat.id.toString())
+                                  setIsCategoryOpen(false)
+                                }}
+                              >
+                                {cat.icon ? `${cat.icon} ` : ''}{cat.name}
+                              </div>
+                            )) : (
+                              <div className="px-3 py-2 text-sm text-slate-500 text-center">No results</div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )
+                }}
+              />
               {errors.category_id && (
                 <p className="mt-1 text-xs text-danger-500">{errors.category_id.message}</p>
               )}

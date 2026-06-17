@@ -22,13 +22,16 @@ def _fetch_expenses(
     user_id: int,
     start_date: Optional[date],
     end_date: Optional[date],
+    category_id: Optional[int] = None,
 ):
-    """Fetch expenses filtered by optional date range."""
+    """Fetch expenses filtered by optional date range and category."""
     query = db.query(Expense).filter(Expense.user_id == user_id)
     if start_date:
         query = query.filter(Expense.date >= start_date)
     if end_date:
         query = query.filter(Expense.date <= end_date)
+    if category_id is not None:
+        query = query.filter(Expense.category_id == category_id)
     return query.order_by(Expense.date.desc()).all()
 
 
@@ -55,11 +58,12 @@ def _build_dataframe(expenses) -> pd.DataFrame:
 def export_csv(
     start_date: Optional[date] = Query(None),
     end_date: Optional[date] = Query(None),
+    category_id: Optional[int] = Query(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     """Export all user expenses as a CSV file."""
-    expenses = _fetch_expenses(db, current_user.id, start_date, end_date)
+    expenses = _fetch_expenses(db, current_user.id, start_date, end_date, category_id)
     df = _build_dataframe(expenses)
 
     output = io.StringIO()
@@ -78,11 +82,12 @@ def export_csv(
 def export_excel(
     start_date: Optional[date] = Query(None),
     end_date: Optional[date] = Query(None),
+    category_id: Optional[int] = Query(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     """Export all user expenses as an Excel (.xlsx) file."""
-    expenses = _fetch_expenses(db, current_user.id, start_date, end_date)
+    expenses = _fetch_expenses(db, current_user.id, start_date, end_date, category_id)
     df = _build_dataframe(expenses)
 
     wb = Workbook()
@@ -100,12 +105,12 @@ def export_excel(
         cell.font = header_font
 
     # Write data rows
-    for row_idx, row in enumerate(df.itertuples(index=False), start=2):
-        ws.cell(row=row_idx, column=1, value=row.Date)
-        ws.cell(row=row_idx, column=2, value=row.Description)
-        ws.cell(row=row_idx, column=3, value=row.Category)
-        ws.cell(row=row_idx, column=4, value=row.Amount)
-        ws.cell(row=row_idx, column=5, value=getattr(row, "Payment Method"))
+    for row_idx, row in enumerate(df.to_dict("records"), start=2):
+        ws.cell(row=row_idx, column=1, value=row["Date"])
+        ws.cell(row=row_idx, column=2, value=row["Description"])
+        ws.cell(row=row_idx, column=3, value=row["Category"])
+        ws.cell(row=row_idx, column=4, value=row["Amount"])
+        ws.cell(row=row_idx, column=5, value=row["Payment Method"])
 
     # Auto-fit column widths
     for col in ws.columns:
@@ -128,11 +133,12 @@ def export_excel(
 def preview_expenses(
     start_date: Optional[date] = Query(None),
     end_date: Optional[date] = Query(None),
+    category_id: Optional[int] = Query(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     """Return a JSON preview of expenses for the reports page (no file download)."""
-    expenses = _fetch_expenses(db, current_user.id, start_date, end_date)
+    expenses = _fetch_expenses(db, current_user.id, start_date, end_date, category_id)
     return [
         {
             "id": e.id,

@@ -31,14 +31,25 @@ def _build_expense_response(expense: Expense) -> ExpenseResponse:
     )
 
 
-@router.get("", response_model=List[ExpenseResponse])
+from pydantic import BaseModel
+
+class PaginatedExpenseResponse(BaseModel):
+    expenses: List[ExpenseResponse]
+    total: int
+    page: int
+    total_pages: int
+
+@router.get("", response_model=PaginatedExpenseResponse)
 def list_expenses(
     search: Optional[str] = Query(None, description="Search in description"),
     category_id: Optional[int] = Query(None),
     start_date: Optional[date] = Query(None),
     end_date: Optional[date] = Query(None),
+    payment_method: Optional[str] = Query(None),
     sort_by: Optional[str] = Query("date", pattern="^(amount|date)$"),
     sort_order: Optional[str] = Query("desc", pattern="^(asc|desc)$"),
+    page: int = Query(1, ge=1),
+    limit: int = Query(1000, ge=1, le=5000),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -53,6 +64,8 @@ def list_expenses(
         query = query.filter(Expense.date >= start_date)
     if end_date:
         query = query.filter(Expense.date <= end_date)
+    if payment_method:
+        query = query.filter(Expense.payment_method == payment_method)
 
     sort_column = Expense.date if sort_by == "date" else Expense.amount
     if sort_order == "asc":
@@ -60,8 +73,18 @@ def list_expenses(
     else:
         query = query.order_by(sort_column.desc())
 
+    total = query.count()
+    query = query.limit(limit).offset((page - 1) * limit)
+
     expenses = query.all()
-    return [_build_expense_response(e) for e in expenses]
+    import math
+    return PaginatedExpenseResponse(
+        expenses=[_build_expense_response(e) for e in expenses],
+        total=total,
+        page=page,
+        total_pages=math.ceil(total / limit) if limit else 1
+    )
+
 
 
 @router.post("", response_model=ExpenseResponse, status_code=status.HTTP_201_CREATED)

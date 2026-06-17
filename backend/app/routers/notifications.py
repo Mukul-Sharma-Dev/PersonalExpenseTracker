@@ -86,7 +86,7 @@ def get_notifications(
                 "title": "Budget Alert",
                 "body": f"You have reached 50% of your monthly budget.",
                 "time": "Today",
-                "unread": False,
+                "unread": True,
                 "type": "info"
             })
             notif_id += 1
@@ -105,7 +105,7 @@ def get_notifications(
     if recent_expense_count == 0:
         notifications.append({
             "id": notif_id,
-            "title": "Friendly Reminder \ud83d\udcdd",
+            "title": "Friendly Reminder 📝",
             "body": "You haven't logged any expenses in the last 3 days. Stay on track!",
             "time": "Today",
             "unread": True,
@@ -131,7 +131,7 @@ def get_notifications(
             "title": "Large Expense Detected",
             "body": f"A large expense of \u20b9{large_expense.amount:,.0f} for '{large_expense.description}' was recorded recently.",
             "time": str(large_expense.date),
-            "unread": False,
+            "unread": True,
             "type": "warning"
         })
         notif_id += 1

@@ -1,8 +1,11 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { AnimatePresence } from 'framer-motion'
 import Layout from '../components/Layout'
 import ProtectedRoute from '../components/ProtectedRoute'
-import LoginPage from '../pages/LoginPage'
-import RegisterPage from '../pages/RegisterPage'
+import LandingPage from '../pages/LandingPage'
+import AuthPage from '../pages/AuthPage'
+// import LoginPage from '../pages/LoginPage'
+// import RegisterPage from '../pages/RegisterPage'
 import DashboardPage from '../pages/DashboardPage'
 import ExpensesPage from '../pages/ExpensesPage'
 import CategoriesPage from '../pages/CategoriesPage'
@@ -20,14 +23,20 @@ function ProtectedLayout({ children }) {
 }
 
 export default function AppRoutes() {
-  return (
-    <Routes>
-      {/* Default redirect */}
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+  const location = useLocation()
+  
+  // Group auth routes under the same key so AuthPage doesn't unmount when switching between them
+  const routeKey = ['/login', '/register'].includes(location.pathname) ? 'auth' : location.pathname;
 
-      {/* Public routes */}
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/register" element={<RegisterPage />} />
+  return (
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={routeKey}>
+      {/* Public Landing Page */}
+      <Route path="/" element={<LandingPage />} />
+
+      {/* Public Auth Routes */}
+      <Route path="/login" element={<AuthPage />} />
+      <Route path="/register" element={<AuthPage />} />
 
       {/* Protected routes — each wrapped in Layout */}
       <Route
@@ -61,6 +70,7 @@ export default function AppRoutes() {
 
       {/* Catch-all */}
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
-    </Routes>
+      </Routes>
+    </AnimatePresence>
   )
 }

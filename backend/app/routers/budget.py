@@ -41,28 +41,25 @@ def _compute_budget_response(budget: Budget, db: Session) -> BudgetResponse:
     )
 
 
-@router.get("", response_model=BudgetResponse)
-def get_budget(
+from typing import List
+from pydantic import BaseModel
+
+class BudgetsResponse(BaseModel):
+    budgets: List[BudgetResponse]
+
+@router.get("", response_model=BudgetsResponse)
+def get_budgets(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Get the current month's budget with computed spent/remaining/percentage."""
-    now = datetime.now()
-    budget = (
+    """Get all budgets for the current user."""
+    budgets = (
         db.query(Budget)
-        .filter(
-            Budget.user_id == current_user.id,
-            Budget.month == now.month,
-            Budget.year == now.year,
-        )
-        .first()
+        .filter(Budget.user_id == current_user.id)
+        .order_by(Budget.year.desc(), Budget.month.desc())
+        .all()
     )
-    if not budget:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="No budget set for the current month",
-        )
-    return _compute_budget_response(budget, db)
+    return BudgetsResponse(budgets=[_compute_budget_response(b, db) for b in budgets])
 
 
 @router.post("", response_model=BudgetResponse, status_code=status.HTTP_200_OK)

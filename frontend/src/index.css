@@ -16,6 +16,20 @@
   ::selection {
     @apply bg-primary-500/30 text-primary-900 dark:text-primary-100;
   }
+
+  /* Fix native date picker in dark mode and hide default icon */
+  input[type="date"] {
+    color-scheme: light;
+  }
+  
+  .dark input[type="date"] {
+    color-scheme: dark;
+  }
+  
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    display: none;
+    -webkit-appearance: none;
+  }
 }
 
 @layer components {

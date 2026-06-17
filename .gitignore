@@ -41,3 +41,8 @@ backend/app/models/__pycache__/
 backend/app/routers/__pycache__/
 backend/app/schemas/__pycache__/
 backend/app/utils/__pycache__/
+
+node_modules/
+.env
+dist/
+build/
