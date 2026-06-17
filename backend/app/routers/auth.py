@@ -1,5 +1,6 @@
 import os
-import uuid
+import cloudinary
+import cloudinary.uploader
 from datetime import timedelta
 from typing import Optional
 from pathlib import Path
@@ -8,6 +9,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from pydantic import BaseModel
 from sqlalchemy import func
 from sqlalchemy.orm import Session
+from dotenv import load_dotenv
 
 from app.database.db import get_db
 from app.models.category import Category
@@ -15,6 +17,16 @@ from app.models.user import User
 from app.schemas.auth import Token, UserCreate, UserLogin, UserResponse
 from app.utils.auth import ACCESS_TOKEN_EXPIRE_MINUTES, create_access_token, get_current_user
 from app.utils.hashing import hash_password, verify_password
+
+load_dotenv()
+
+# Configure Cloudinary from environment variables (never exposed to frontend)
+cloudinary.config(
+    cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
+    api_key=os.getenv("CLOUDINARY_API_KEY"),
+    api_secret=os.getenv("CLOUDINARY_API_SECRET"),
+    secure=True,
+)
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -146,4 +158,50 @@ def update_avatar_url(
 @router.get("/profile", response_model=UserResponse)
 def get_profile(current_user: User = Depends(get_current_user)):
     """Alias for /auth/me — returns current user profile including avatar_url."""
+    return current_user
+
+
+# ── Cloudinary: Secure backend upload ─────────────────────────────────────────
+@router.post("/avatar/upload", response_model=UserResponse)
+async def upload_avatar(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Securely upload avatar to Cloudinary using server-side API keys and save URL to DB."""
+    # Validate file type
+    allowed_types = {"image/jpeg", "image/png", "image/webp", "image/gif"}
+    if file.content_type not in allowed_types:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only JPEG, PNG, WEBP, or GIF images are allowed",
+        )
+
+    # Validate file size (max 5 MB)
+    contents = await file.read()
+    if len(contents) > 5 * 1024 * 1024:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File size must be under 5 MB",
+        )
+
+    try:
+        result = cloudinary.uploader.upload(
+            contents,
+            folder="expense-tracker/avatars",
+            public_id=f"user_{current_user.id}",
+            overwrite=True,
+            resource_type="image",
+            transformation=[{"width": 400, "height": 400, "crop": "fill", "gravity": "face"}],
+        )
+        image_url = result["secure_url"]
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Cloudinary upload failed: {str(e)}",
+        )
+
+    current_user.avatar_url = image_url
+    db.commit()
+    db.refresh(current_user)
     return current_user

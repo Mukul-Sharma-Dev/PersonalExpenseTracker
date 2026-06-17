@@ -1,200 +1,255 @@
 # 💰 Personal Expense Tracker
 
-A full-stack personal expense tracker with JWT authentication, analytics, budget management, and exportable reports.
-
-| Layer | Technology |
-|-------|-----------|
-| Frontend | React 18 (Vite), Tailwind CSS, React Router v6, Recharts |
-| Backend | Python FastAPI, SQLAlchemy ORM, Pydantic v2 |
-| Database | SQLite |
-| Auth | JWT (python-jose) + bcrypt (passlib) |
+A full-stack personal finance management platform that leverages a modern React frontend and a FastAPI Python backend to optimize your budget, track daily expenses, and provide real-time financial analytics.
 
 ---
 
-## 📁 Project Structure
+## Table of Contents
 
+- [Overview](#overview)
+- [System Architecture](#system-architecture)
+- [Technology Stack](#technology-stack)
+- [Project Structure](#project-structure)
+- [Features](#features)
+- [Database Schema](#database-schema)
+- [Installation](#installation)
+- [Running the Application](#running-the-application)
+- [API Reference](#api-reference)
+- [Production Roadmap](#production-roadmap)
+- [License](#license)
+
+---
+
+## Overview
+
+The Personal Expense Tracker is an intelligent financial tool designed to modernize how you manage money. The system uses a secure backend and a highly interactive frontend to analyze your spending habits, manage category-wise budgets, and generate detailed reports.
+
+### Key Objectives
+
+- **Adaptive Budgeting**: Dynamically track and warn users when they approach their monthly spending limits.
+- **Visual Analytics**: Automated breakdown of expenses with interactive charts and graphs.
+- **Smart Notifications**: Real-time alerts for system events, budget warnings, and report generation.
+- **Data Export**: Seamless generation of Excel and CSV reports for personal record-keeping.
+
+---
+
+## System Architecture
+
+```text
+┌─────────────────────────────────────────────────────────────────────────┐
+│                      Personal Expense Tracker                           │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  ┌──────────────┐     ┌──────────────┐     ┌──────────────────────────┐ │
+│  │   Frontend   │────▶│   Backend    │────▶│     Database (SQLite /   │ │
+│  │  (React/Vite)│◀────│  (FastAPI)   │◀────│       PostgreSQL)        │ │
+│  └──────────────┘     └──────────────┘     └──────────────────────────┘ │
+│         │                    │                                          │
+│         │                    │                                          │
+│         │          ┌─────────▼─────────┐                                │
+│         └─────────▶│    Cloudinary     │                                │
+│                    │  (Image Hosting)  │                                │
+│                    └───────────────────┘                                │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
 ```
+
+---
+
+## Technology Stack
+
+### Backend
+| Component | Technology |
+|-----------|------------|
+| API Framework | FastAPI |
+| Database ORM | SQLAlchemy |
+| Database | SQLite (Local) / PostgreSQL (Production) |
+| Authentication | Passlib with bcrypt (JWT Tokens) |
+| Data Processing | Pandas, Openpyxl |
+
+### Frontend
+| Component | Technology |
+|-----------|------------|
+| Framework | React 18 |
+| Build Tool | Vite 5 |
+| Routing | React Router DOM 6 |
+| Charts | Recharts |
+| Animations| Framer Motion |
+| Styling | Tailwind CSS, PostCSS |
+
+---
+
+## Project Structure
+
+```text
 expense-tracker/
-├── backend/          # FastAPI + SQLAlchemy + SQLite
-└── frontend/         # React + Vite + Tailwind CSS
+├── backend/                      # FastAPI backend application
+│   ├── app/
+│   │   ├── database/             # Database connection configuration
+│   │   ├── models/               # SQLAlchemy database models
+│   │   ├── routers/              # API endpoints
+│   │   ├── schemas/              # Pydantic request/response schemas
+│   │   └── utils/                # JWT auth and hashing helpers
+│   ├── main.py                   # Application entry point
+│   ├── requirements.txt          # Python dependencies
+│   └── .env                      # Environment configuration
+│
+└── frontend/                     # React frontend application
+    ├── src/
+    │   ├── App.jsx               # Main application component
+    │   ├── main.jsx              # Application entry point
+    │   ├── components/           # Reusable UI components (Navbar, Modals)
+    │   ├── context/              # React context providers (AuthContext)
+    │   ├── pages/                # Application pages (Dashboard, Analytics, etc.)
+    │   ├── routes/               # Routing configuration
+    │   └── services/             # API service functions (Axios)
+    ├── package.json              # Node.js dependencies
+    ├── vite.config.js            # Vite configuration
+    └── tailwind.config.js        # Tailwind CSS configuration
 ```
 
 ---
 
-## 🚀 Getting Started
+## Features
+
+### Public Interface
+- **Landing Page**: Animated hero section with modern glassmorphism UI, feature showcase, and a contact form.
+
+### Authentication & Profile
+- **Combined Auth Page**: Cinematic sliding panel for Sign In / Sign Up, fully responsive for mobile.
+- **Secure Avatar Uploads**: Backend-processed integration with Cloudinary for secure profile picture management.
+- **Profile Management**: Update display name and profile settings on the fly.
+
+### Dashboard & Analytics
+- **Dashboard Overview**: Real-time financial statistics, highest spending category, and recent transactions.
+- **Analytics View**: Interactive Pie charts (category distribution), Bar charts (monthly comparison), and Line charts (daily trends).
+- **Smart Notifications**: Dropdown alerts for budget thresholds (50%, 80%, 100%), new expenses, and report generation.
+
+### Expense & Budget Management
+- **Expense Control**: Full CRUD operations for expenses with advanced filtering (by date, category, search term) and sorting.
+- **Custom Categories**: Manage custom categories with unique icons and colors.
+- **Budget Tracking**: Visual progress bars mapping your spending against your monthly budget limits.
+
+### Reports
+- **Export Capabilities**: Generate styled `.xlsx` (Excel) and `.csv` files for selected date ranges.
+
+---
+
+## Database Schema
+
+| Table | Purpose |
+|-------|---------|
+| `users` | User authentication, avatar URLs, and profile data |
+| `categories` | User-specific expense categories with colors and icons |
+| `expenses` | Core transactional data linked to categories and users |
+| `budgets` | Monthly spending limits defined by the user |
+| `contacts` | Messages submitted from the public landing page |
+
+---
+
+## Installation
 
 ### Prerequisites
-
-- **Python 3.10+**
-- **Node.js 18+**
-
----
+- Python 3.10+
+- Node.js 18+
 
 ### Backend Setup
 
 ```bash
-# 1. Navigate to backend directory
-cd expense-tracker/backend
+cd backend
 
-# 2. Create and activate a virtual environment
+# Create virtual environment
 python3 -m venv venv
-source venv/bin/activate          # macOS/Linux
-# venv\Scripts\activate           # Windows
+source venv/bin/activate  # Mac/Linux (For Windows: venv\Scripts\activate)
 
-# 3. Install dependencies
+# Install dependencies
 pip install -r requirements.txt
 
-# If behind a corporate SSL proxy (e.g. Sophos), add:
-# pip install -r requirements.txt --trusted-host pypi.org --trusted-host files.pythonhosted.org
-
-# 4. Start the backend server
-uvicorn main:app --reload --port 8000
+# Configure environment
+cp .env.example .env
 ```
 
-The API will be available at: **http://localhost:8000**
-Interactive Swagger docs: **http://localhost:8000/docs**
+**.env Configuration (`backend/.env`):**
+```env
+DATABASE_URL=sqlite:///./expenses.db
+SECRET_KEY=your_super_secret_jwt_key
+ACCESS_TOKEN_EXPIRE_MINUTES=10080
 
----
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
+```
 
 ### Frontend Setup
 
 ```bash
-# 1. Navigate to frontend directory
-cd expense-tracker/frontend
+cd frontend
 
-# 2. Install dependencies (already done during scaffolding)
+# Install dependencies
 npm install
+```
 
-# 3. Start the development server
+---
+
+## Running the Application
+
+### Start Backend Server
+
+```bash
+cd backend
+source venv/bin/activate
+uvicorn main:app --reload --port 8000
+```
+The API will be available at `http://localhost:8000` (Swagger UI at `/docs`)
+
+### Start Frontend Development Server
+
+```bash
+cd frontend
 npm run dev
 ```
-
-The app will be available at: **http://localhost:5173**
-
-> ⚠️ Make sure the backend is running before starting the frontend.
+The application will be available at `http://localhost:5173`
 
 ---
 
-## 🔑 Features
+## API Reference
 
-### Authentication
-- User registration & login with JWT tokens
-- Password hashing with bcrypt
-- Protected routes (auto-redirect to login)
-- 24-hour token expiry
+### Authentication & Profile
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/auth/register` | POST | Register a new user |
+| `/auth/login` | POST | Authenticate and retrieve JWT token |
+| `/auth/me` | GET | Retrieve current user profile |
+| `/auth/avatar/upload`| POST | Secure Cloudinary avatar upload |
 
-### Dashboard
-- Total expenses (all time)
-- Monthly & today's expenses
-- Highest spending category
-- Recent transactions list
-- Category distribution pie chart
+### Expenses & Categories
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/expenses` | GET/POST | List all expenses or create a new one |
+| `/expenses/{id}` | PUT/DELETE| Update or delete a specific expense |
+| `/categories` | GET/POST | List or create custom categories |
 
-### Expense Management
-- Add / Edit / Delete expenses
-- Fields: Amount, Category, Description, Date, Payment Method
-- Search by description
-- Filter by category, date range
-- Sort by amount or date
-
-### Categories
-- Default categories: Food, Travel, Shopping, Bills, Entertainment, Other
-- Create, rename, and delete custom categories
-
-### Budget Management
-- Set monthly budget
-- Visual progress bar (green → yellow → red)
-- Warning banner when spending exceeds 80%
-- Remaining budget display
-
-### Analytics
-- 🥧 Pie chart — category-wise expense distribution
-- 📊 Bar chart — monthly expenses (last 6 months)
-- 📈 Line chart — daily spending trend
-
-### Reports
-- Export to **CSV**
-- Export to **Excel** (.xlsx) with styled headers
-- Filter by date range before exporting
-- Live preview table
+### Analytics & Reports
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/dashboard` | GET | Fetch aggregated dashboard metrics |
+| `/budget` | GET/POST | Fetch or update the current month's budget |
+| `/reports/excel` | GET | Download styled Excel report |
+| `/reports/csv` | GET | Download CSV data dump |
 
 ---
 
-## 🌐 API Endpoints
+## Production Roadmap
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/auth/register` | Register a new user |
-| POST | `/auth/login` | Login and get JWT token |
-| GET | `/auth/me` | Get current user profile |
-| PUT | `/auth/me` | Update current user name |
-| GET | `/expenses` | List expenses (with filters) |
-| POST | `/expenses` | Create expense |
-| PUT | `/expenses/{id}` | Update expense |
-| DELETE | `/expenses/{id}` | Delete expense |
-| GET | `/categories` | List categories |
-| POST | `/categories` | Create category |
-| PUT | `/categories/{id}` | Update category |
-| DELETE | `/categories/{id}` | Delete category |
-| GET | `/budget` | Get current month budget |
-| POST | `/budget` | Set / update budget |
-| GET | `/dashboard` | Get dashboard stats |
-| GET | `/reports/csv` | Download CSV |
-| GET | `/reports/excel` | Download Excel |
-| GET | `/reports/preview` | Preview report as JSON |
+1. **Database Migration**: Switch local SQLite database to a managed PostgreSQL instance (e.g., Supabase, Neon) for persistence across server restarts.
+2. **Advanced AI Analytics**: Implement machine learning to predict future spending patterns based on historical data.
+3. **Receipt Scanning**: Integrate OCR (Optical Character Recognition) to automatically parse and add expenses from uploaded bill photos.
+4. **Multi-Currency Support**: Add real-time exchange rates for tracking expenses during international travel.
 
 ---
 
-## 🎨 UI Highlights
+## License
 
-- **Dark mode** toggle (persisted in localStorage)
-- **Glassmorphism** cards with backdrop-blur
-- **Responsive** layout with collapsible sidebar on mobile
-- **Toast notifications** for all actions
-- **Form validation** with Zod + react-hook-form
-- **Recharts** for interactive analytics
+Copyright (c) 2026 Mukul Sharma. All Rights Reserved.
 
----
-
-## 🗄️ Database Schema
-
-```
-users        (id, name, email, password_hash, created_at)
-categories   (id, name, user_id → users.id)
-expenses     (id, amount, description, date, payment_method, category_id, user_id, created_at)
-budgets      (id, amount, month, year, user_id)
-```
-
-SQLite database file: `backend/expenses.db` (auto-created on first run)
-
----
-
-## 📦 Backend Dependencies (`requirements.txt`)
-
-```
-fastapi
-uvicorn[standard]
-sqlalchemy
-python-jose[cryptography]
-passlib[bcrypt]
-pydantic[email]
-python-multipart
-pandas
-openpyxl
-python-dotenv
-aiofiles
-```
-
-## 📦 Frontend Dependencies (`package.json`)
-
-```
-react, react-dom
-react-router-dom
-axios
-recharts
-react-hot-toast
-react-hook-form, @hookform/resolvers, zod
-date-fns
-lucide-react
-tailwindcss, postcss, autoprefixer
-```
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

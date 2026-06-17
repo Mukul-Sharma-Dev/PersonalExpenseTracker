@@ -34,6 +34,7 @@ backend/htmlcov/
 backend/expenses.db
 
 # Uploads / Media
+backend/.env
 backend/uploads/
 backend/app/__pycache__/
 backend/app/database/__pycache__/
